@@ -1,0 +1,141 @@
+name: KLARIXA_VIRTUAL_OS_GENESIS_V2
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: write
+
+jobs:
+  genesis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup_Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+
+      - name: Inyectar_Arquitectura_Flexible
+        run: |
+          flutter create --org com.f1725 --project-name klarixa_os . --force
+          cat > lib/main.dart <<'EOF'
+          import 'package:flutter/material.dart';
+          import 'dart:math' as math;
+
+          void main() => runApp(MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData.dark().copyWith(
+              scaffoldBackgroundColor: const Color(0xFF121212), // Deep Slate
+              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF03DAC6)),
+            ),
+            home: const KlarixaVirtualNode(),
+          ));
+
+          class KlarixaVirtualNode extends StatefulWidget {
+            const KlarixaVirtualNode({super.key});
+            @override
+            State<KlarixaVirtualNode> createState() => _KlarixaVirtualNodeState();
+          }
+
+          class _KlarixaVirtualNodeState extends State<KlarixaVirtualNode> {
+            bool isThinking = false;
+            double sliderVal = 0.0;
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  title: _buildOctaveMonitor(), // Monitor de 8 Consultas
+                ),
+                body: Stack(
+                  children: [
+                    // AVATAR INTERACTIVO (Espacio para el modelo 3D)
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.face_retouching_natural, size: 180, color: Colors.cyanAccent.withOpacity(0.3)),
+                          const Text("CLONACIÓN BIOMÉTRICA ACTIVA", style: TextStyle(fontSize: 8, color: Colors.white10)),
+                        ],
+                      ),
+                    ),
+                    // FEED SOCIAL Y BOTONES GROK-STYLE
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildChatBubble("Identidad confirmada. Estoy lista para mimetizar tu voz y estilo. ¿Iniciamos el escaneo 3D o revisamos la bitácora?"),
+                            const SizedBox(height: 15),
+                            _buildActionGrid(), // Bloque de botones agrupados
+                            const SizedBox(height: 20),
+                            _buildSafetySlider(), // Confirmación de Seguridad
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _buildOctaveMonitor() => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(8, (i) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: 8, height: 8,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: isThinking ? Colors.cyanAccent : Colors.white12),
+              )),
+            );
+
+            Widget _buildChatBubble(String text) => Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(15)),
+              child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'monospace')),
+            );
+
+            Widget _buildActionGrid() => Wrap(
+              spacing: 15, runSpacing: 15,
+              children: [
+                _actionIcon(Icons.mic_external_on, "IMITAR VOZ", Colors.purpleAccent),
+                _actionIcon(Icons.accessibility_new, "ROPA/3D", Colors.blueAccent),
+                _actionIcon(Icons.account_balance_wallet, "NEQUI", Colors.pinkAccent),
+                _actionIcon(Icons.picture_as_pdf, "INFORME", Colors.orangeAccent),
+              ],
+            );
+
+            Widget _actionIcon(IconData icon, String label, Color col) => Column(
+              children: [
+                Icon(icon, color: col, size: 24),
+                Text(label, style: TextStyle(color: col.withOpacity(0.8), fontSize: 7)),
+              ],
+            );
+
+            Widget _buildSafetySlider() => Row(
+              children: [
+                const Icon(Icons.lock_outline, size: 14, color: Colors.white24),
+                Expanded(
+                  child: Slider(
+                    value: sliderVal,
+                    onChanged: (v) => setState(() => sliderVal = v),
+                  ),
+                ),
+                Text("AUTORIZAR", style: TextStyle(fontSize: 8, color: Colors.cyanAccent.withOpacity(0.5))),
+              ],
+            );
+          }
+          EOF
+
+      - name: Compilar_APK_Soberano
+        run: |
+          flutter pub get
+          flutter build apk --release --split-per-abi
+
+      - name: Entregar_KLARIXA_FINAL
+        uses: actions/upload-artifact@v4
+        with:
+          name: KLARIXA-VIRTUAL-OS-V2
+          path: build/app/outputs/flutter-apk/*.apk
